@@ -1,0 +1,150 @@
+"""
+Hydrao GATT binary protocol decoder.
+Ported from hydrao-ble-raspberry/protocol.py (Apache 2.0 — Copyright 2026 Hydrao).
+"""
+from __future__ import annotations
+
+import struct
+from typing import Optional
+
+from .const import DEFAULT_CALIBRATION, MAX_SOAPING_TIME, MIN_VALID_VOLUME
+
+
+# ── Device UUID ───────────────────────────────────────────────────────────────
+
+def decode_device_uuid(data: bytes) -> str:
+    if len(data) >= 16:
+        p1 = struct.unpack_from("<I", data, 0)[0]
+        p2 = struct.unpack_from("<H", data, 4)[0]
+        p3 = struct.unpack_from("<H", data, 6)[0]
+        p4 = struct.unpack_from("<H", data, 8)[0]
+        p5 = data[10:16].hex().upper()
+        return f"{p1:08X}-{p2:04X}-{p3:04X}-{p4:04X}-{p5}"
+    elif len(data) >= 12:
+        p1 = struct.unpack_from("<I", data, 0)[0]
+        p2 = struct.unpack_from("<I", data, 4)[0]
+        p3 = struct.unpack_from("<I", data, 8)[0]
+        return f"{p1:08X}-{p2:08X}-{p3:08X}"
+    return data.hex().upper()
+
+
+# ── Calibration ───────────────────────────────────────────────────────────────
+
+def decode_calibration(data: bytes) -> int:
+    if len(data) < 2:
+        return DEFAULT_CALIBRATION
+    return struct.unpack_from("<H", data, 0)[0]
+
+
+# ── Thresholds ────────────────────────────────────────────────────────────────
+
+def decode_thresholds(data: bytes) -> list[dict]:
+    if len(data) < 16:
+        return []
+    result = []
+    for i in range(4):
+        off = i * 4
+        liters = data[off]
+        r, g, b = data[off + 1], data[off + 2], data[off + 3]
+        result.append({"color": f"#{r:02X}{g:02X}{b:02X}", "liter": float(liters)})
+    return result
+
+def thresholds_are_empty(thresholds: list[dict]) -> bool:
+    return all(t["liter"] == 0 for t in thresholds)
+
+def encode_thresholds(thresholds: list[dict]) -> bytes:
+    result = bytearray(16)
+    for i, t in enumerate(thresholds[:4]):
+        off = i * 4
+        result[off] = int(t["liter"])
+        color = t["color"].lstrip("#")
+        result[off + 1] = int(color[0:2], 16)
+        result[off + 2] = int(color[2:4], 16)
+        result[off + 3] = int(color[4:6], 16)
+    return bytes(result)
+
+
+# ── Shower range ──────────────────────────────────────────────────────────────
+
+def decode_shower_range(data: bytes) -> tuple[int, int]:
+    if len(data) < 4:
+        return 0, 0
+    return struct.unpack_from("<H", data, 0)[0], struct.unpack_from("<H", data, 2)[0]
+
+def encode_shower_request(shower_id: int) -> bytes:
+    return struct.pack("<H", shower_id)
+
+
+# ── Live characteristics ──────────────────────────────────────────────────────
+
+def decode_live_volume(data: bytes) -> int:
+    if len(data) < 3:
+        return 0
+    return data[2]
+
+
+def _convert_flow(raw: int, calibration: int) -> Optional[float]:
+    if raw == 0 or calibration == 0:
+        return None
+    return (1000 * 60 * 20) / (calibration * raw)
+
+
+def decode_live_flow(data: bytes, calibration: int) -> tuple[Optional[float], Optional[float]]:
+    if len(data) < 4:
+        return None, None
+    instant_raw = struct.unpack_from("<H", data, 0)[0]
+    average_raw = struct.unpack_from("<H", data, 2)[0]
+    return _convert_flow(instant_raw, calibration), _convert_flow(average_raw, calibration)
+
+
+def _convert_temperature(raw: int) -> Optional[float]:
+    if raw > 3000:
+        return None
+    elif raw > 100:
+        return -0.02635 * (raw * 16) + 79.48293
+    else:
+        return raw / 2
+
+
+def decode_live_temperature(data: bytes) -> tuple[Optional[float], Optional[float]]:
+    if len(data) < 4:
+        return None, None
+    instant_raw = struct.unpack_from("<H", data, 0)[0]
+    average_raw = struct.unpack_from("<H", data, 2)[0]
+    return _convert_temperature(instant_raw), _convert_temperature(average_raw)
+
+
+# ── Historical shower ─────────────────────────────────────────────────────────
+
+def decode_shower_data(data: bytes, calibration: int) -> Optional[dict]:
+    if len(data) < 7:
+        return None
+    if all(b == 0xFF for b in data[1:]):
+        return None
+
+    shower_id = struct.unpack_from("<H", data, 0)[0]
+    volume    = struct.unpack_from("<H", data, 2)[0]
+
+    if volume == 0 or volume == 65535 or volume < MIN_VALID_VOLUME:
+        return None
+
+    temp_raw    = data[4]
+    flow_raw    = data[5]
+    soaping_time = min(data[6], MAX_SOAPING_TIME)
+
+    temperature = None if temp_raw == 0xFF else _convert_temperature(temp_raw)
+    flow = None
+    duration = None
+    if flow_raw > 0:
+        flow = _convert_flow(flow_raw * 4, calibration)
+        if flow:
+            duration = (volume / flow) * 60
+
+    return {
+        "id": shower_id,
+        "volume": volume,
+        "temperature": temperature,
+        "flow": flow,
+        "duration": duration,
+        "soaping_time": soaping_time,
+    }
