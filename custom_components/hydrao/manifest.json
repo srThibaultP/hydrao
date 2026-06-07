@@ -5,7 +5,7 @@
   "config_flow": true,
   "documentation": "https://github.com/hydrao-opensource/hydrao-ble-raspberry",
   "issue_tracker": "https://github.com/hydrao-opensource/hydrao-ble-raspberry/issues",
-  "requirements": ["bleak==0.22.3", "bleak-retry-connector==3.6.0"],
+  "requirements": [],
   "bluetooth": [
     {
       "local_name": "HYDRAO_SHOWER*",
