@@ -1,40 +1,29 @@
 {
   "config": {
     "step": {
-      "user": {
-        "title": "Hydrao Shower Head",
-        "description": "Select a discovered Hydrao device or enter its Bluetooth MAC address manually.\n\n{found} device(s) found nearby.",
-        "data": {
-          "address": "Device (MAC address)"
-        }
-      },
       "bluetooth_confirm": {
         "title": "Hydrao Shower Head",
-        "description": "Do you want to set up {name}?"
+        "description": "Configurer {name} ?"
       }
     },
-    "error": {
-      "invalid_address": "Invalid MAC address."
-    },
     "abort": {
-      "already_configured": "This device is already configured.",
-      "no_devices_found": "No Hydrao devices found nearby."
+      "already_configured": "Cet appareil est déjà configuré."
     }
   },
   "entity": {
     "sensor": {
-      "live_volume":               { "name": "Live volume" },
-      "live_flow":                 { "name": "Live flow rate" },
-      "live_temperature":          { "name": "Live temperature" },
-      "live_duration":             { "name": "Live duration" },
-      "last_shower_volume":        { "name": "Last shower volume" },
-      "last_shower_temperature":   { "name": "Last shower temperature" },
-      "last_shower_flow":          { "name": "Last shower avg flow" },
-      "last_shower_duration":      { "name": "Last shower duration" },
-      "last_shower_soaping_time":  { "name": "Last shower soaping time" },
-      "last_shower_date":          { "name": "Last shower date" },
-      "rssi":                      { "name": "BLE signal strength" },
-      "firmware_version":          { "name": "Firmware version" }
+      "live_volume":              { "name": "Live volume" },
+      "live_flow":                { "name": "Live flow rate" },
+      "live_temperature":         { "name": "Live temperature" },
+      "live_duration":            { "name": "Live duration" },
+      "last_shower_volume":       { "name": "Last shower volume" },
+      "last_shower_temperature":  { "name": "Last shower temperature" },
+      "last_shower_flow":         { "name": "Last shower avg flow" },
+      "last_shower_duration":     { "name": "Last shower duration" },
+      "last_shower_soaping_time": { "name": "Last shower soaping time" },
+      "last_shower_date":         { "name": "Last shower date" },
+      "rssi":                     { "name": "BLE signal strength" },
+      "firmware_version":         { "name": "Firmware version" }
     },
     "binary_sensor": {
       "is_showering": { "name": "Showering" }

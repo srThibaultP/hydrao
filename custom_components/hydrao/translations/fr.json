@@ -1,40 +1,29 @@
 {
   "config": {
     "step": {
-      "user": {
-        "title": "Pommeau de douche Hydrao",
-        "description": "Sélectionnez un appareil Hydrao détecté ou saisissez son adresse Bluetooth manuellement.\n\n{found} appareil(s) trouvé(s) à proximité.",
-        "data": {
-          "address": "Appareil (adresse MAC)"
-        }
-      },
       "bluetooth_confirm": {
         "title": "Pommeau de douche Hydrao",
-        "description": "Voulez-vous configurer {name} ?"
+        "description": "Configurer {name} ?"
       }
     },
-    "error": {
-      "invalid_address": "Adresse MAC invalide."
-    },
     "abort": {
-      "already_configured": "Cet appareil est déjà configuré.",
-      "no_devices_found": "Aucun appareil Hydrao trouvé à proximité."
+      "already_configured": "Cet appareil est déjà configuré."
     }
   },
   "entity": {
     "sensor": {
-      "live_volume":               { "name": "Volume en cours" },
-      "live_flow":                 { "name": "Débit en cours" },
-      "live_temperature":          { "name": "Température en cours" },
-      "live_duration":             { "name": "Durée en cours" },
-      "last_shower_volume":        { "name": "Volume dernière douche" },
-      "last_shower_temperature":   { "name": "Température dernière douche" },
-      "last_shower_flow":          { "name": "Débit moyen dernière douche" },
-      "last_shower_duration":      { "name": "Durée dernière douche" },
-      "last_shower_soaping_time":  { "name": "Temps savonnage dernière douche" },
-      "last_shower_date":          { "name": "Date dernière douche" },
-      "rssi":                      { "name": "Signal BLE" },
-      "firmware_version":          { "name": "Version firmware" }
+      "live_volume":              { "name": "Volume en cours" },
+      "live_flow":                { "name": "Débit en cours" },
+      "live_temperature":         { "name": "Température en cours" },
+      "live_duration":            { "name": "Durée en cours" },
+      "last_shower_volume":       { "name": "Volume dernière douche" },
+      "last_shower_temperature":  { "name": "Température dernière douche" },
+      "last_shower_flow":         { "name": "Débit moyen dernière douche" },
+      "last_shower_duration":     { "name": "Durée dernière douche" },
+      "last_shower_soaping_time": { "name": "Temps savonnage dernière douche" },
+      "last_shower_date":         { "name": "Date dernière douche" },
+      "rssi":                     { "name": "Signal BLE" },
+      "firmware_version":         { "name": "Version firmware" }
     },
     "binary_sensor": {
       "is_showering": { "name": "Douche en cours" }
