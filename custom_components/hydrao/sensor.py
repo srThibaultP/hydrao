@@ -59,6 +59,7 @@ SENSOR_DESCRIPTIONS: tuple[HydraoSensorDescription, ...] = (
         native_unit_of_measurement=UnitOfVolume.LITERS,
         device_class=SensorDeviceClass.VOLUME,
         state_class=SensorStateClass.MEASUREMENT,
+        suggested_display_precision=2,
         icon="mdi:shower-head",
         value_key="live_volume",
     ),
@@ -68,6 +69,7 @@ SENSOR_DESCRIPTIONS: tuple[HydraoSensorDescription, ...] = (
         name="Débit en cours",
         native_unit_of_measurement="L/min",
         state_class=SensorStateClass.MEASUREMENT,
+        suggested_display_precision=2,
         icon="mdi:water-pump",
         value_key="live_flow",
     ),
@@ -78,6 +80,7 @@ SENSOR_DESCRIPTIONS: tuple[HydraoSensorDescription, ...] = (
         native_unit_of_measurement=UnitOfTemperature.CELSIUS,
         device_class=SensorDeviceClass.TEMPERATURE,
         state_class=SensorStateClass.MEASUREMENT,
+        suggested_display_precision=2,
         value_key="live_temperature",
     ),
     HydraoSensorDescription(
@@ -87,6 +90,7 @@ SENSOR_DESCRIPTIONS: tuple[HydraoSensorDescription, ...] = (
         native_unit_of_measurement=UnitOfTime.SECONDS,
         device_class=SensorDeviceClass.DURATION,
         state_class=SensorStateClass.MEASUREMENT,
+        suggested_display_precision=2,
         icon="mdi:timer",
         value_key="live_duration",
     ),
@@ -98,6 +102,7 @@ SENSOR_DESCRIPTIONS: tuple[HydraoSensorDescription, ...] = (
         native_unit_of_measurement=UnitOfVolume.LITERS,
         device_class=SensorDeviceClass.VOLUME,
         state_class=SensorStateClass.TOTAL,
+        suggested_display_precision=2,
         icon="mdi:water",
         value_key="last_shower",
         sub_key="volume",
@@ -109,6 +114,7 @@ SENSOR_DESCRIPTIONS: tuple[HydraoSensorDescription, ...] = (
         native_unit_of_measurement=UnitOfTemperature.CELSIUS,
         device_class=SensorDeviceClass.TEMPERATURE,
         state_class=SensorStateClass.MEASUREMENT,
+        suggested_display_precision=2,
         value_key="last_shower",
         sub_key="temperature",
     ),
@@ -118,6 +124,7 @@ SENSOR_DESCRIPTIONS: tuple[HydraoSensorDescription, ...] = (
         name="Débit moyen dernière douche",
         native_unit_of_measurement="L/min",
         state_class=SensorStateClass.MEASUREMENT,
+        suggested_display_precision=2,
         icon="mdi:water-pump",
         value_key="last_shower",
         sub_key="flow",
@@ -129,6 +136,7 @@ SENSOR_DESCRIPTIONS: tuple[HydraoSensorDescription, ...] = (
         native_unit_of_measurement=UnitOfTime.SECONDS,
         device_class=SensorDeviceClass.DURATION,
         state_class=SensorStateClass.MEASUREMENT,
+        suggested_display_precision=2,
         icon="mdi:timer-check",
         value_key="last_shower",
         sub_key="duration",
@@ -140,6 +148,7 @@ SENSOR_DESCRIPTIONS: tuple[HydraoSensorDescription, ...] = (
         native_unit_of_measurement=UnitOfTime.SECONDS,
         device_class=SensorDeviceClass.DURATION,
         state_class=SensorStateClass.MEASUREMENT,
+        suggested_display_precision=2,
         icon="mdi:hand-wash",
         value_key="last_shower",
         sub_key="soaping_time",
@@ -223,6 +232,9 @@ class HydraoSensorEntity(CoordinatorEntity[HydraoCoordinator], SensorEntity):
 
         if self.entity_description.transform:
             return self.entity_description.transform(raw)
+
+        if isinstance(raw, float):
+            return round(raw, 2)
 
         return raw
 
