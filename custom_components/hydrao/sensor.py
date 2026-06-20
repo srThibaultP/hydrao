@@ -17,6 +17,7 @@ from homeassistant.const import (
     UnitOfTemperature,
     UnitOfTime,
     UnitOfVolume,
+    EntityCategory,
 )
 from homeassistant.core import HomeAssistant, callback
 from homeassistant.helpers.device_registry import DeviceInfo
@@ -163,7 +164,7 @@ SENSOR_DESCRIPTIONS: tuple[HydraoSensorDescription, ...] = (
         sub_key="date",
         transform=lambda v: datetime.fromisoformat(v) if v else None,
     ),
-    # ── Appareil ───────────────────────────────────────────────────────────────
+    # ── Appareil (diagnostic) ────────────────────────────────────────────────────
     HydraoSensorDescription(
         key=SENSOR_RSSI,
         translation_key=SENSOR_RSSI,
@@ -171,7 +172,7 @@ SENSOR_DESCRIPTIONS: tuple[HydraoSensorDescription, ...] = (
         native_unit_of_measurement=SIGNAL_STRENGTH_DECIBELS_MILLIWATT,
         device_class=SensorDeviceClass.SIGNAL_STRENGTH,
         state_class=SensorStateClass.MEASUREMENT,
-        entity_registry_enabled_default=False,
+        entity_category=EntityCategory.DIAGNOSTIC,
         value_key="rssi",
     ),
     HydraoSensorDescription(
@@ -179,7 +180,7 @@ SENSOR_DESCRIPTIONS: tuple[HydraoSensorDescription, ...] = (
         translation_key=SENSOR_FW_VERSION,
         name="Version firmware",
         icon="mdi:chip",
-        entity_registry_enabled_default=False,
+        entity_category=EntityCategory.DIAGNOSTIC,
         value_key="fw_version",
     ),
 )
