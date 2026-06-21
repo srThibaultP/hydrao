@@ -35,9 +35,9 @@ UpdateCallback = Callable[[dict[str, Any]], None]
 class HydraoDevice:
     """Manages a single Hydrao BLE device: connect → sync → live poll."""
 
-    def __init__(self, ble_device: BLEDevice, rssi: int = 0) -> None:
+    def __init__(self, ble_device: Optional[BLEDevice], rssi: int = 0) -> None:
         self.ble_device = ble_device
-        self.address: str = ble_device.address
+        self.address: str = ble_device.address if ble_device else ""
         self.rssi: int = rssi
 
         # Device metadata (populated on first connect)
@@ -46,7 +46,7 @@ class HydraoDevice:
         self.fw_version: Optional[str] = None
         self.calibration: int = DEFAULT_CALIBRATION
         self.thresholds: list[dict] = list(DEFAULT_THRESHOLDS)
-        self.name: str = ble_device.name or "Shower"
+        self.name: str = (ble_device.name if ble_device and ble_device.name else "Shower")
 
         # Live state
         self.live_volume: int = 0
@@ -87,7 +87,14 @@ class HydraoDevice:
             self._update_callbacks.remove(cb)
 
     def start(self) -> None:
-        """Start the background connection+polling task."""
+        """
+        Start the background connection+polling task.
+        No-op if no BLE device has been resolved yet (showerhead not
+        advertising — e.g. no shower currently running). Call again via
+        update_ble_device() once an advertisement is seen.
+        """
+        if self.ble_device is None:
+            return
         if self._task is None or self._task.done():
             self._stop.clear()
             self._task = asyncio.create_task(self._run_loop())
@@ -101,7 +108,9 @@ class HydraoDevice:
     def update_ble_device(self, ble_device: BLEDevice, rssi: int) -> None:
         """Update BLE device reference on rediscovery (used by scanner)."""
         self.ble_device = ble_device
+        self.address = ble_device.address
         self.rssi = rssi
+        self._notify_update()
 
     def as_dict(self) -> dict[str, Any]:
         """Snapshot of all current data (passed to coordinator)."""

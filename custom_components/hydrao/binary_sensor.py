@@ -39,6 +39,10 @@ class HydraoShoweringBinarySensor(CoordinatorEntity[HydraoCoordinator], BinarySe
         self._attr_device_info = _device_info(coordinator)
 
     @property
+    def available(self) -> bool:
+        return self.coordinator.device.ble_device is not None
+
+    @property
     def is_on(self) -> bool | None:
         if not self.coordinator.data:
             return None

@@ -216,6 +216,11 @@ class HydraoSensorEntity(CoordinatorEntity[HydraoCoordinator], SensorEntity):
         self._attr_device_info = _device_info(coordinator)
 
     @property
+    def available(self) -> bool:
+        """Unavailable until the showerhead has been seen advertising at least once."""
+        return self.coordinator.device.ble_device is not None
+
+    @property
     def native_value(self) -> Any:
         data = self.coordinator.data
         if not data:
