@@ -1,14 +1,14 @@
 # Hydrao — Custom Component Home Assistant
 
-Intégration Home Assistant **sans gateway externe** pour les pommeaux de douche connectés **Hydrao** (Aloe, Cereus, Yucca, First).
+Intégration Home Assistant pour les pommeaux de douche connectés **Hydrao**.
 
-La communication BLE est gérée directement par HA via son subsystem Bluetooth natif — **aucun Raspberry Pi, aucun service tiers requis**.
+La communication BLE est gérée directement par HA via son subsystem Bluetooth natif.
 
 ## Prérequis
 
 - Home Assistant ≥ 2024.1 avec le subsystem **Bluetooth** activé
-- Un adaptateur Bluetooth sur la machine qui fait tourner HA (Raspberry Pi 4/5, NUC, etc.)
-- Le pommeau Hydrao à portée BLE
+- Un adaptateur Bluetooth sur la machine qui fait tourner HA (Raspberry Pi, NUC, etc.)
+- Le pommeau Hydrao
 
 ## Installation
 
@@ -35,7 +35,7 @@ Le pommeau Hydrao **ne broadcast en Bluetooth que pendant une douche active** �
 
 Aucune saisie d'adresse MAC n'est nécessaire : l'intégration est uniquement basée sur la découverte automatique.
 
-> **À noter :** une fois l'intégration ajoutée, les entités existent immédiatement mais restent **indisponibles** (grisées) tant qu'aucune douche n'est en cours. Elles repassent disponibles dès la prochaine utilisation du pommeau — pas de "Failed to setup, will retry" au démarrage de HA, c'est le comportement attendu.
+> **À noter :** une fois l'intégration ajoutée, les entités existent immédiatement mais restent **indisponibles** (grisées) tant qu'aucune douche n'est en cours. Elles repassent disponibles dès la prochaine utilisation du pommeau.
 
 ## Entités créées (par pommeau)
 
@@ -96,7 +96,7 @@ UUIDs GATT utilisés :
 
 ## Portée BLE limitée ? Utiliser un proxy ESPHome
 
-Si la machine HA n'a pas de Bluetooth ou est trop loin du pommeau, un **ESP32 + ESPHome** peut servir de proxy BLE — aucune modification de cette intégration n'est nécessaire, HA traite le proxy comme un adaptateur Bluetooth distant.
+Si la machine HA n'a pas de Bluetooth ou est trop loin du pommeau, un **ESP32 + ESPHome** peut servir de proxy BLE.
 
 ```yaml
 esphome:
