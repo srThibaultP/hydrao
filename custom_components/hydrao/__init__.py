@@ -41,7 +41,15 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     device.address = address
     device.name = name
 
-    coordinator = HydraoCoordinator(hass, device)
+    # Restore persisted metadata so firmware/hw sensors show right away,
+    # even before the next shower connects.
+    opts = entry.options
+    if opts.get("fw_version"):
+        device.fw_version = opts["fw_version"]
+    if opts.get("hw_version") is not None:
+        device.hw_version = opts["hw_version"]
+
+    coordinator = HydraoCoordinator(hass, device, entry)
     hass.data.setdefault(DOMAIN, {})[entry.entry_id] = coordinator
 
     await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
