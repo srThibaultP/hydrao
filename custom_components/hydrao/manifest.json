@@ -3,8 +3,8 @@
   "name": "Hydrao Shower Head",
   "version": "1.0.0",
   "config_flow": true,
-  "documentation": "https://github.com/hydrao-opensource/hydrao-ble-raspberry",
-  "issue_tracker": "https://github.com/hydrao-opensource/hydrao-ble-raspberry/issues",
+  "documentation": "https://github.com/srThibaultP/hydrao",
+  "issue_tracker": "https://github.com/srThibaultP/hydrao/issues",
   "requirements": [],
   "bluetooth": [
     {

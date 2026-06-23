@@ -9,6 +9,7 @@ from homeassistant.components.bluetooth import (
     async_register_callback,
     BluetoothChange,
     BluetoothCallbackMatcher,
+    BluetoothScanningMode,
 )
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import Platform
@@ -64,7 +65,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         hass,
         _on_bluetooth_event,
         BluetoothCallbackMatcher(address=address, connectable=True),
-        # MAC-based match: fires on every advertisement from this device
+        BluetoothScanningMode.ACTIVE,
     )
 
     entry.async_on_unload(unregister)
