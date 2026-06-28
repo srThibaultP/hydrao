@@ -138,7 +138,7 @@ def decode_shower_data(data: bytes, calibration: int) -> Optional[dict]:
     if flow_raw > 0:
         flow = _convert_flow(flow_raw * 4, calibration)
         if flow:
-            duration = (volume / flow) * 60
+            duration = volume / flow  # minutes (volume L / flow L/min)
 
     return {
         "id": shower_id,
@@ -147,4 +147,5 @@ def decode_shower_data(data: bytes, calibration: int) -> Optional[dict]:
         "flow": flow,
         "duration": duration,
         "soaping_time": soaping_time,
+        "date": None,  # not stored in BLE history, set by live monitor when known
     }

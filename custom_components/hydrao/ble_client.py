@@ -158,7 +158,7 @@ class HydraoDevice:
             BleakClient,
             self.ble_device,
             self.address,
-            disconnected_callback=lambda _: _LOGGER.warning("[%s] Disconnected", self.address),
+            disconnected_callback=lambda _: _LOGGER.info("[%s] Disconnected", self.address),
             max_attempts=3,
         )
         self._client = client
@@ -168,6 +168,7 @@ class HydraoDevice:
                 await self._on_connected(client)
         finally:
             self._client = None
+            self._on_disconnected()
 
     # ── On connected ──────────────────────────────────────────────────────────
 
@@ -175,6 +176,53 @@ class HydraoDevice:
         await self._read_metadata(client)
         await self._sync_history(client)
         await self._live_monitor_loop(client)
+
+    def _on_disconnected(self) -> None:
+        """Reset all live state when the BLE connection is lost.
+
+        The showerhead stops advertising as soon as it is put back on its
+        holder, so we never see a natural 'volume = 0' frame at the end.
+        We must clear live values here to avoid sensors staying stuck.
+        """
+        if self._session_active:
+            # Build last_shower from whatever we accumulated
+            avg_flow = (
+                sum(self._session_flow_samples) / len(self._session_flow_samples)
+                if self._session_flow_samples else None
+            )
+            avg_temp = (
+                sum(self._session_temp_samples) / len(self._session_temp_samples)
+                if self._session_temp_samples else None
+            )
+            duration = (self._session_volume / avg_flow) if avg_flow else None
+            self.last_shower = {
+                "volume": self._session_volume,
+                "temperature": avg_temp,
+                "flow": avg_flow,
+                "duration": duration,
+                "soaping_time": None,
+                "date": (self._session_start or datetime.now(timezone.utc)).isoformat(),
+            }
+            _LOGGER.info(
+                "[%s] Shower ended (disconnected): vol=%dL flow=%s temp=%s dur=%s",
+                self.address, self._session_volume,
+                f"{avg_flow:.1f}L/min" if avg_flow else "N/A",
+                f"{avg_temp:.1f}°C" if avg_temp else "N/A",
+                f"{duration:.1f}min" if duration else "N/A",
+            )
+            self._session_active = False
+            self._session_volume = 0
+            self._session_flow_samples = []
+            self._session_temp_samples = []
+            self._session_start = None
+
+        # Reset all live sensors to zero / None
+        self.live_volume = 0
+        self.live_flow = None
+        self.live_temperature = None
+        self.live_duration = None
+        self.is_showering = False
+        self._notify_update()
 
     # ── Metadata ──────────────────────────────────────────────────────────────
 
@@ -238,7 +286,7 @@ class HydraoDevice:
             await asyncio.sleep(0.2)
             use_notify = True
         except Exception as exc:
-            _LOGGER.warning("[%s] Notifications unavailable (%s), falling back to polling", self.address, exc)
+            _LOGGER.debug("[%s] Notifications unavailable (%s), falling back to polling", self.address, exc)
 
         last_shower_data = None
         try:
@@ -324,7 +372,7 @@ class HydraoDevice:
                 if instant_temp is not None:
                     self._session_temp_samples.append(instant_temp)
 
-                live_duration = (volume / instant_flow * 60) if instant_flow else None
+                live_duration = (volume / instant_flow) if instant_flow else None  # minutes
 
                 self.live_volume = volume
                 self.live_flow = instant_flow
@@ -344,7 +392,7 @@ class HydraoDevice:
                         sum(self._session_temp_samples) / len(self._session_temp_samples)
                         if self._session_temp_samples else None
                     )
-                    duration = (self._session_volume / avg_flow * 60) if avg_flow else None
+                    duration = (self._session_volume / avg_flow) if avg_flow else None  # minutes
                     self.last_shower = {
                         "volume": self._session_volume,
                         "temperature": avg_temp,
@@ -358,7 +406,7 @@ class HydraoDevice:
                         self.address, self._session_volume,
                         f"{avg_flow:.1f}L/min" if avg_flow else "N/A",
                         f"{avg_temp:.1f}°C" if avg_temp else "N/A",
-                        f"{duration:.0f}s" if duration else "N/A",
+                        f"{duration:.1f}min" if duration else "N/A",
                     )
 
                 self.live_volume = 0

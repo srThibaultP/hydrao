@@ -88,12 +88,13 @@ SENSOR_DESCRIPTIONS: tuple[HydraoSensorDescription, ...] = (
         key=SENSOR_LIVE_DURATION,
         translation_key=SENSOR_LIVE_DURATION,
         name="Durée en cours",
-        native_unit_of_measurement=UnitOfTime.SECONDS,
+        native_unit_of_measurement=UnitOfTime.MINUTES,
         device_class=SensorDeviceClass.DURATION,
         state_class=SensorStateClass.MEASUREMENT,
         suggested_display_precision=2,
         icon="mdi:timer",
         value_key="live_duration",
+        # already in minutes from ble_client
     ),
     # ── Dernière douche ────────────────────────────────────────────────────────
     HydraoSensorDescription(
@@ -134,25 +135,27 @@ SENSOR_DESCRIPTIONS: tuple[HydraoSensorDescription, ...] = (
         key=SENSOR_LAST_DURATION,
         translation_key=SENSOR_LAST_DURATION,
         name="Durée dernière douche",
-        native_unit_of_measurement=UnitOfTime.SECONDS,
+        native_unit_of_measurement=UnitOfTime.MINUTES,
         device_class=SensorDeviceClass.DURATION,
         state_class=SensorStateClass.MEASUREMENT,
         suggested_display_precision=2,
         icon="mdi:timer-check",
         value_key="last_shower",
         sub_key="duration",
+        # already in minutes from protocol.py / ble_client
     ),
     HydraoSensorDescription(
         key=SENSOR_LAST_SOAPING,
         translation_key=SENSOR_LAST_SOAPING,
         name="Temps savonnage dernière douche",
-        native_unit_of_measurement=UnitOfTime.SECONDS,
+        native_unit_of_measurement=UnitOfTime.MINUTES,
         device_class=SensorDeviceClass.DURATION,
         state_class=SensorStateClass.MEASUREMENT,
         suggested_display_precision=2,
         icon="mdi:hand-wash",
         value_key="last_shower",
         sub_key="soaping_time",
+        transform=lambda v: round(v / 60, 2) if v else None,  # BLE stores raw seconds
     ),
     HydraoSensorDescription(
         key=SENSOR_LAST_DATE,
