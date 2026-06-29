@@ -1,0 +1,133 @@
+rules:
+  # ── Bronze ──────────────────────────────────────────────────────────────────
+  action-setup:
+    status: exempt
+    comment: No service actions are provided by this integration.
+  appropriate-polling:
+    status: done
+    comment: Push integration via BLE callbacks — no polling interval.
+  brands:
+    status: done
+    comment: icon.png present in repository root.
+  common-modules:
+    status: done
+  config-flow-test-coverage:
+    status: todo
+  config-flow:
+    status: done
+  dependency-transparency:
+    status: done
+    comment: bleak and bleak-retry-connector are provided by HA core bluetooth dependency.
+  docs-actions:
+    status: exempt
+    comment: No service actions are provided by this integration.
+  docs-high-level-description:
+    status: done
+  docs-installation-instructions:
+    status: done
+  docs-removal-instructions:
+    status: done
+  entity-event-setup:
+    status: done
+    comment: BLE callbacks registered in async_setup_entry via entry.async_on_unload.
+  entity-unique-id:
+    status: done
+  has-entity-name:
+    status: done
+  runtime-data:
+    status: done
+  test-before-configure:
+    status: exempt
+    comment: >
+      The showerhead only advertises during an active shower; it is unreachable
+      most of the time, so a connection test during config flow is not possible.
+  test-before-setup:
+    status: done
+    comment: Setup never raises ConfigEntryNotReady; entities start unavailable.
+  unique-config-entry:
+    status: done
+
+  # ── Silver ───────────────────────────────────────────────────────────────────
+  action-exceptions:
+    status: exempt
+    comment: No service actions are provided by this integration.
+  config-entry-unloading:
+    status: done
+  docs-configuration-parameters:
+    status: exempt
+    comment: No configuration parameters — setup is fully automatic via BLE discovery.
+  docs-installation-parameters:
+    status: done
+  entity-unavailable:
+    status: done
+  integration-owner:
+    status: done
+  log-when-unavailable:
+    status: done
+  parallel-updates:
+    status: done
+  reauthentication-flow:
+    status: exempt
+    comment: No authentication required for BLE communication.
+  test-coverage:
+    status: todo
+
+  # ── Gold ─────────────────────────────────────────────────────────────────────
+  devices:
+    status: done
+  diagnostics:
+    status: done
+  discovery-update-info:
+    status: done
+    comment: update_ble_device() called on every BLE advertisement callback.
+  discovery:
+    status: done
+    comment: async_step_bluetooth handles passive BLE discovery.
+  docs-data-update:
+    status: todo
+  docs-examples:
+    status: todo
+  docs-known-limitations:
+    status: todo
+  docs-supported-devices:
+    status: todo
+  docs-supported-functions:
+    status: done
+  docs-troubleshooting:
+    status: todo
+  docs-use-cases:
+    status: todo
+  dynamic-devices:
+    status: exempt
+    comment: One device per config entry; no dynamic device addition needed.
+  entity-category:
+    status: done
+  entity-device-class:
+    status: done
+  entity-disabled-by-default:
+    status: done
+    comment: Diagnostic entities (rssi, firmware) are in DIAGNOSTIC category.
+  entity-translations:
+    status: done
+  exception-translations:
+    status: todo
+  icon-translations:
+    status: todo
+  reconfiguration-flow:
+    status: todo
+  repair-issues:
+    status: exempt
+    comment: No cases requiring user intervention via repair flow.
+  stale-devices:
+    status: exempt
+    comment: One device per entry; removed automatically when entry is removed.
+
+  # ── Platinum ──────────────────────────────────────────────────────────────────
+  async-dependency:
+    status: done
+    comment: bleak is fully async.
+  inject-websession:
+    status: exempt
+    comment: No HTTP/WebSocket dependency; BLE only.
+  strict-typing:
+    status: todo

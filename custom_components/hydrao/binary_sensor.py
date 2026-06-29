@@ -14,13 +14,16 @@ from .const import DOMAIN
 from .coordinator import HydraoCoordinator
 from .sensor import _device_info
 
+# IQS parallel-updates: push integration, no parallel polling needed
+PARALLEL_UPDATES = 0
+
 
 async def async_setup_entry(
     hass: HomeAssistant,
     entry: ConfigEntry,
     async_add_entities: AddEntitiesCallback,
 ) -> None:
-    coordinator: HydraoCoordinator = hass.data[DOMAIN][entry.entry_id]
+    coordinator: HydraoCoordinator = entry.runtime_data
     async_add_entities([HydraoShoweringBinarySensor(coordinator)])
 
 

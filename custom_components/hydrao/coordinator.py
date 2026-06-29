@@ -31,6 +31,7 @@ class HydraoCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         )
         self.device = device
         self._entry = entry
+        self._was_available = False
         self.data: dict[str, Any] = device.as_dict()
 
         device.register_callback(self._on_device_update)
@@ -39,6 +40,14 @@ class HydraoCoordinator(DataUpdateCoordinator[dict[str, Any]]):
     def _on_device_update(self, snapshot: dict[str, Any]) -> None:
         """Called by HydraoDevice every time data changes (live poll or history)."""
         self.async_set_updated_data(snapshot)
+
+        # IQS log-when-unavailable: log once when connected, once when lost
+        now_available = device_is_connected(snapshot)
+        if now_available and not self._was_available:
+            _LOGGER.info("[%s] Device connected and available", self.device.address)
+        elif not now_available and self._was_available:
+            _LOGGER.info("[%s] Device unavailable (shower ended / out of range)", self.device.address)
+        self._was_available = now_available
 
         # Persist fw_version and hw_version so they survive HA restarts
         fw = snapshot.get("fw_version")
@@ -53,3 +62,8 @@ class HydraoCoordinator(DataUpdateCoordinator[dict[str, Any]]):
     async def _async_update_data(self) -> dict[str, Any]:
         """Fallback — normally never called since we use push callbacks."""
         return self.device.as_dict()
+
+
+def device_is_connected(snapshot: dict[str, Any]) -> bool:
+    """True when the device is actively showering (BLE connected)."""
+    return bool(snapshot.get("is_showering", False))

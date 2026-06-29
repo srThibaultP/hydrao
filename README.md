@@ -122,3 +122,11 @@ bluetooth_proxy:
 ## Licence
 
 Apache 2.0 — basé sur les projets open source [Hydrao](https://github.com/hydrao-opensource).
+
+## Désinstallation
+
+1. **Paramètres → Appareils et Services**
+2. Cliquer sur l'intégration **Hydrao Shower Head**
+3. Cliquer sur les **⋮** → **Supprimer**
+4. Redémarrer Home Assistant
+5. Supprimer manuellement le dossier `custom_components/hydrao/` si vous n'utilisez pas HACS

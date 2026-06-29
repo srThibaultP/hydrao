@@ -1,7 +1,7 @@
 """
 Hydrao BLE client for Home Assistant.
 Handles connection, history sync and live polling for one device.
-Inspired by hydrao-ble-raspberry/device.py (Apache 2.0 — Copyright 2026 Hydrao).
+
 """
 from __future__ import annotations
 

@@ -1,6 +1,6 @@
 """
 Hydrao GATT binary protocol decoder.
-Ported from hydrao-ble-raspberry/protocol.py (Apache 2.0 — Copyright 2026 Hydrao).
+
 """
 from __future__ import annotations
 

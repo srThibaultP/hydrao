@@ -4,7 +4,7 @@ DOMAIN = "hydrao"
 MANUFACTURER = "Hydrao"
 DEVICE_NAME_PREFIX = "HYDRAO_SHOWER"
 
-# ── GATT UUIDs (from hydrao-ble-raspberry/config.py) ─────────────────────────
+# ── GATT UUIDs ───────────────────────────────────────────────────────────────
 SERVICE_UUID = "0000180f-0000-1000-8000-00805f9b34fb"
 
 CHAR = {

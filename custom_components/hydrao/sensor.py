@@ -19,7 +19,7 @@ from homeassistant.const import (
     UnitOfVolume,
     EntityCategory,
 )
-from homeassistant.core import HomeAssistant, callback
+from homeassistant.core import HomeAssistant
 from homeassistant.helpers.device_registry import DeviceInfo
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
@@ -41,6 +41,9 @@ from .const import (
     SENSOR_RSSI,
 )
 from .coordinator import HydraoCoordinator
+
+# IQS parallel-updates: push integration, no parallel polling needed
+PARALLEL_UPDATES = 0
 
 
 @dataclass(frozen=True, kw_only=True)
@@ -167,7 +170,7 @@ SENSOR_DESCRIPTIONS: tuple[HydraoSensorDescription, ...] = (
         sub_key="date",
         transform=lambda v: datetime.fromisoformat(v) if v else None,
     ),
-    # ── Appareil (diagnostic) ────────────────────────────────────────────────────
+    # ── Appareil (diagnostic) ─────────────────────────────────────────────────
     HydraoSensorDescription(
         key=SENSOR_RSSI,
         translation_key=SENSOR_RSSI,
@@ -194,7 +197,7 @@ async def async_setup_entry(
     entry: ConfigEntry,
     async_add_entities: AddEntitiesCallback,
 ) -> None:
-    coordinator: HydraoCoordinator = hass.data[DOMAIN][entry.entry_id]
+    coordinator: HydraoCoordinator = entry.runtime_data
     async_add_entities(
         HydraoSensorEntity(coordinator, description)
         for description in SENSOR_DESCRIPTIONS

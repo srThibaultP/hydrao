@@ -23,8 +23,10 @@ _LOGGER = logging.getLogger(__name__)
 
 PLATFORMS = [Platform.SENSOR, Platform.BINARY_SENSOR]
 
+type HydraoConfigEntry = ConfigEntry[HydraoCoordinator]
 
-async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
+
+async def async_setup_entry(hass: HomeAssistant, entry: HydraoConfigEntry) -> bool:
     """
     Set up a Hydrao device from a config entry.
 
@@ -50,7 +52,9 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         device.hw_version = opts["hw_version"]
 
     coordinator = HydraoCoordinator(hass, device, entry)
-    hass.data.setdefault(DOMAIN, {})[entry.entry_id] = coordinator
+
+    # IQS runtime-data: store coordinator on entry instead of hass.data
+    entry.runtime_data = coordinator
 
     await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
 
@@ -61,12 +65,17 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         device.update_ble_device(ble_device, last_info.rssi if last_info else 0)
         device.start()
 
-    # Otherwise, wait for the next BLE advertisement (next shower) to connect.
+    _unavailable_logged = False
+
     @callback
     def _on_bluetooth_event(
         service_info, change: BluetoothChange
     ) -> None:
+        nonlocal _unavailable_logged
         device.update_ble_device(service_info.device, service_info.rssi or 0)
+        if _unavailable_logged:
+            _LOGGER.info("[%s] Device back in range", address)
+            _unavailable_logged = False
         device.start()  # no-op if already running
 
     unregister = async_register_callback(
@@ -82,10 +91,6 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     return True
 
 
-async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
+async def async_unload_entry(hass: HomeAssistant, entry: HydraoConfigEntry) -> bool:
     """Unload a Hydrao config entry."""
-    unload_ok = await hass.config_entries.async_unload_platforms(entry, PLATFORMS)
-    if unload_ok:
-        coordinator: HydraoCoordinator = hass.data[DOMAIN].pop(entry.entry_id)
-        coordinator.device.stop()
-    return unload_ok
+    return await hass.config_entries.async_unload_platforms(entry, PLATFORMS)
