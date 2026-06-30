@@ -7,7 +7,8 @@
       }
     },
     "abort": {
-      "already_configured": "Cet appareil est déjà configuré."
+      "already_configured": "Cet appareil est déjà configuré.",
+      "no_devices_found": "Aucun pommeau Hydrao détecté. Cet appareil n'émet en Bluetooth que pendant qu'une douche est en cours. Ouvrez l'eau au niveau du pommeau puis réessayez — ou patientez simplement, Home Assistant le détectera automatiquement et vous proposera de le configurer dès la prochaine utilisation."
     }
   },
   "entity": {

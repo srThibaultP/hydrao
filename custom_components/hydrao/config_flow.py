@@ -1,23 +1,36 @@
-"""Config flow for Hydrao — passive BLE discovery only."""
+"""Config flow for Hydrao — BLE discovery, with standard manual entry point."""
 from __future__ import annotations
 
 from typing import Any
 
 from homeassistant import config_entries
-from homeassistant.components.bluetooth import BluetoothServiceInfoBleak
+from homeassistant.components.bluetooth import (
+    BluetoothServiceInfoBleak,
+    async_discovered_service_info,
+)
 from homeassistant.data_entry_flow import FlowResult
 
-from .const import DOMAIN
+from .const import DEVICE_NAME_PREFIX, DOMAIN
 
 
 class HydraoConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
-    """Discovered automatically via BLE — no manual input needed."""
+    """
+    Hydrao devices are found via passive BLE discovery (the showerhead only
+    advertises while a shower is active). This flow supports both:
+      - async_step_bluetooth: HA notifies automatically when it sees one.
+      - async_step_user: standard "+ Add integration" entry point, showing
+        any already-discovered device or guiding the user if none is found
+        yet — this matches the pattern used by official BLE integrations
+        (e.g. Govee, SwitchBot, Inkbird).
+    """
 
     VERSION = 1
 
     def __init__(self) -> None:
         self._address: str = ""
         self._name: str = ""
+
+    # ── Automatic discovery (HA notification) ───────────────────────────────────
 
     async def async_step_bluetooth(
         self, discovery_info: BluetoothServiceInfoBleak
@@ -48,5 +61,46 @@ class HydraoConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             description_placeholders={"name": self._name},
         )
 
-    # Pas de async_step_user → HA n'affiche pas ce composant dans la liste
-    # "Ajouter une intégration" manuelle. Tout passe par la découverte BLE.
+    # ── Manual entry point ("+ Add integration") ────────────────────────────────
+
+    async def async_step_user(
+        self, user_input: dict[str, Any] | None = None
+    ) -> FlowResult:
+        """
+        Standard entry point shown when the user clicks "+ Add integration"
+        and searches for "Hydrao".
+
+        Hydrao showerheads only advertise over BLE while a shower is active,
+        so we can't trigger a scan here. Instead we check for any device
+        HA's Bluetooth subsystem has already seen recently, and offer it
+        directly. If none, we explain what to do.
+        """
+        already_configured = {
+            entry.data.get("address")
+            for entry in self._async_current_entries()
+        }
+
+        discovered = [
+            info
+            for info in async_discovered_service_info(self.hass, connectable=True)
+            if info.name
+            and info.name.startswith(DEVICE_NAME_PREFIX)
+            and info.address not in already_configured
+        ]
+
+        if not discovered:
+            # No device seen yet — guide the user instead of showing an
+            # empty/confusing form.
+            return self.async_abort(reason="no_devices_found")
+
+        # Exactly one (or more) device already advertising right now:
+        # reuse the same confirm step as automatic discovery.
+        info = discovered[0]
+        await self.async_set_unique_id(info.address)
+        self._abort_if_unique_id_configured()
+
+        self._address = info.address
+        self._name = info.name or info.address
+        self.context["title_placeholders"] = {"name": self._name}
+
+        return await self.async_step_bluetooth_confirm()
