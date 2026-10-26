@@ -4,9 +4,11 @@ from __future__ import annotations
 import logging
 
 from homeassistant.components.bluetooth import (
+    async_address_present,
     async_ble_device_from_address,
     async_last_service_info,
     async_register_callback,
+    async_track_unavailable,
     BluetoothChange,
     BluetoothCallbackMatcher,
     BluetoothScanningMode,
@@ -51,6 +53,11 @@ async def async_setup_entry(hass: HomeAssistant, entry: HydraoConfigEntry) -> bo
     if opts.get("hw_version") is not None:
         device.hw_version = opts["hw_version"]
 
+    # Stop reconnecting as soon as HA no longer sees the showerhead.
+    device.set_presence_check(
+        lambda: async_address_present(hass, address, connectable=True)
+    )
+
     coordinator = HydraoCoordinator(hass, device, entry)
 
     # IQS runtime-data: store coordinator on entry instead of hass.data
@@ -65,18 +72,18 @@ async def async_setup_entry(hass: HomeAssistant, entry: HydraoConfigEntry) -> bo
         device.update_ble_device(ble_device, last_info.rssi if last_info else 0)
         device.start()
 
-    _unavailable_logged = False
-
     @callback
     def _on_bluetooth_event(
         service_info, change: BluetoothChange
     ) -> None:
-        nonlocal _unavailable_logged
         device.update_ble_device(service_info.device, service_info.rssi or 0)
-        if _unavailable_logged:
-            _LOGGER.info("[%s] Device back in range", address)
-            _unavailable_logged = False
         device.start()  # no-op if already running
+
+    @callback
+    def _on_unavailable(service_info) -> None:
+        """Showerhead stopped advertising: stop trying to reach it."""
+        _LOGGER.debug("[%s] No longer advertising, stopping connection loop", address)
+        device.stop()
 
     unregister = async_register_callback(
         hass,
@@ -86,6 +93,9 @@ async def async_setup_entry(hass: HomeAssistant, entry: HydraoConfigEntry) -> bo
     )
 
     entry.async_on_unload(unregister)
+    entry.async_on_unload(
+        async_track_unavailable(hass, _on_unavailable, address, connectable=True)
+    )
     entry.async_on_unload(device.stop)
 
     return True
