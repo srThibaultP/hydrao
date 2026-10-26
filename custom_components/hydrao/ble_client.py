@@ -31,6 +31,10 @@ _LOGGER = logging.getLogger(__name__)
 # Callback signature: called whenever live or shower data changes
 UpdateCallback = Callable[[dict[str, Any]], None]
 
+# Consecutive failures, while the device is still advertising, before a
+# connection problem is worth a warning instead of a debug line.
+FAILURES_BEFORE_WARNING = 5
+
 
 class HydraoDevice:
     """Manages a single Hydrao BLE device: connect → sync → live poll."""
@@ -68,6 +72,10 @@ class HydraoDevice:
         self._update_callbacks: list[UpdateCallback] = []
         self._shower_notif_event = asyncio.Event()
         self._shower_notif_data: Optional[bytes] = None
+        # Tells whether HA still sees the showerhead advertising. The
+        # showerhead only advertises during a shower, so once it disappears
+        # there is nothing to connect to and retrying would only fill the logs.
+        self._is_present: Callable[[], bool] = lambda: True
 
         # Live session accumulator
         self._session_active = False
@@ -85,6 +93,10 @@ class HydraoDevice:
         self._update_callbacks.discard(cb) if hasattr(self._update_callbacks, "discard") else None
         if cb in self._update_callbacks:
             self._update_callbacks.remove(cb)
+
+    def set_presence_check(self, is_present: Callable[[], bool]) -> None:
+        """Set the function telling whether the device is still advertising."""
+        self._is_present = is_present
 
     def start(self) -> None:
         """
@@ -107,10 +119,12 @@ class HydraoDevice:
 
     def update_ble_device(self, ble_device: BLEDevice, rssi: int) -> None:
         """Update BLE device reference on rediscovery (used by scanner)."""
+        changed = rssi != self.rssi or self.ble_device is None
         self.ble_device = ble_device
         self.address = ble_device.address
         self.rssi = rssi
-        self._notify_update()
+        if changed:
+            self._notify_update()
 
     def as_dict(self) -> dict[str, Any]:
         """Snapshot of all current data (passed to coordinator)."""
@@ -135,15 +149,38 @@ class HydraoDevice:
     # ── Connection loop ────────────────────────────────────────────────────────
 
     async def _run_loop(self) -> None:
+        """Connect and reconnect for as long as the device is advertising.
+
+        The loop ends as soon as the showerhead stops advertising (shower
+        over, or out of range of every Bluetooth proxy). The next
+        advertisement starts it again, so failures are expected and only
+        logged at debug level unless they persist while the device is seen.
+        """
         backoff = 5
+        failures = 0
         while not self._stop.is_set():
+            if not self._is_present():
+                _LOGGER.debug("[%s] Not advertising, waiting for next shower", self.address)
+                return
             try:
                 await self._connect_and_run()
                 backoff = 5
+                failures = 0
             except asyncio.CancelledError:
                 return
             except (BleakError, asyncio.TimeoutError, OSError) as err:
-                _LOGGER.warning("[%s] BLE error: %s — retry in %ds", self.address, err, backoff)
+                failures += 1
+                if failures == FAILURES_BEFORE_WARNING and self._is_present():
+                    _LOGGER.warning(
+                        "[%s] Still unable to connect after %d attempts while the "
+                        "device is advertising (signal %s dBm): %s",
+                        self.address, failures, self.rssi, err,
+                    )
+                else:
+                    _LOGGER.debug(
+                        "[%s] BLE error (attempt %d): %s, retry in %ds",
+                        self.address, failures, err, backoff,
+                    )
             except Exception:
                 _LOGGER.exception("[%s] Unexpected error", self.address)
 
@@ -153,18 +190,18 @@ class HydraoDevice:
             backoff = min(backoff * 2, 60)
 
     async def _connect_and_run(self) -> None:
-        _LOGGER.info("[%s] Connecting...", self.address)
+        _LOGGER.debug("[%s] Connecting...", self.address)
         client = await establish_connection(
             BleakClient,
             self.ble_device,
             self.address,
-            disconnected_callback=lambda _: _LOGGER.info("[%s] Disconnected", self.address),
+            disconnected_callback=lambda _: _LOGGER.debug("[%s] Disconnected", self.address),
             max_attempts=3,
         )
         self._client = client
         try:
             async with client:
-                _LOGGER.info("[%s] Connected", self.address)
+                _LOGGER.debug("[%s] Connected", self.address)
                 await self._on_connected(client)
         finally:
             self._client = None
